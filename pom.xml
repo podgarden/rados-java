@@ -23,6 +23,14 @@
         <developerConnection>scm:git:https://github.com/ceph/rados-java</developerConnection>
         <connection>scm:git:https://github.com/ceph/rados-java</connection>
     </scm>
+    <developers>
+        <developer>
+            <id>wido</id>
+            <name>Wido den Hollander</name>
+            <email>wido@widodh.nl</email>
+            <url>http://blog.widodh.nl/</url>
+        </developer>
+    </developers>
 
     <build>
       <defaultGoal>install</defaultGoal>

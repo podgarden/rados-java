@@ -20,6 +20,8 @@
     </licenses>
     <scm>
         <url>http://www.github.com/ceph/rados-java</url>
+        <developerConnection>scm:git:https://github.com/ceph/rados-java</developerConnection>
+        <connection>scm:git:https://github.com/ceph/rados-java</connection>
     </scm>
 
     <build>

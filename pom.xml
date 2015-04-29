@@ -14,12 +14,23 @@
     <url>http://www.ceph.com</url>
     <licenses>
         <license>
-            <name>LGPLv2</name>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
     <scm>
         <url>http://www.github.com/ceph/rados-java</url>
+        <developerConnection>scm:git:https://github.com/ceph/rados-java</developerConnection>
+        <connection>scm:git:https://github.com/ceph/rados-java</connection>
     </scm>
+    <developers>
+        <developer>
+            <id>wido</id>
+            <name>Wido den Hollander</name>
+            <email>wido@widodh.nl</email>
+            <url>http://blog.widodh.nl/</url>
+        </developer>
+    </developers>
 
     <build>
       <defaultGoal>install</defaultGoal>

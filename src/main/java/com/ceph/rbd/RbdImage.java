@@ -185,21 +185,34 @@ public class RbdImage {
      * @throws RbdException
      */
     public List<RbdSnapInfo> snapList() throws RbdException {
-        IntByReference numSnaps = new IntByReference(16);
-        RbdSnapInfo[] snaps;
+        return snapList(16);
+    }
 
-        while (true) {
-            snaps = new RbdSnapInfo[numSnaps.getValue()];
-            int r = rbd.rbd_snap_list(this.getPointer(), snaps, numSnaps);
-            if (r >= 0) {
-                numSnaps.setValue(r);
-                break;
-            } else if (r == -34) { /* FIXME: hard-coded -ERANGE */
-                numSnaps.setValue(r);
-            } else {
-                throw new RbdException("Failed listing snapshots", r);
-            }
+    /**
+     * List all snapshots
+     *
+     * @param initialBufferSize
+     * 		   Initial size of the byte buffer holding snapshot names
+     * @return List
+     * @throws RbdException
+     */
+    public List<RbdSnapInfo> snapList(int initialBufferSize) throws RbdException {
+        IntByReference numSnaps = new IntByReference(1);
+        RbdSnapInfo[] snaps = new RbdSnapInfo[numSnaps.getValue()];
+
+        int r = rbd.rbd_snap_list(this.getPointer(), snaps, numSnaps);
+        if (r < 0 && r != -34) {
+            throw new RbdException("Failed to list RBD snapshots", r);
         }
+
+        // -34 (-ERANGE) is returned if the buffers are not big enough
+        if (r == -34 || numSnaps.getValue() > initialBufferSize) {
+            snaps = new RbdSnapInfo[numSnaps.getValue()];
+            r = rbd.rbd_snap_list(this.getPointer(), snaps, numSnaps);
+            if (r < 0) {
+                throw new RbdException("Failed to list RBD snapshots", r);
+            }
+    		}
 
         /*
          * Before clearing the backing list (well, just the name strings)
@@ -213,10 +226,10 @@ public class RbdImage {
         for (int i = 0; i < numSnaps.getValue(); i++) {
           snaps[i].setAutoSynch(false);
         }
-        
+
         rbd.rbd_snap_list_end(snaps);
 
-        return Arrays.asList(snaps).subList(0, numSnaps.getValue());
+        return Arrays.asList(snaps).subList(0, numSnaps.getValue() - 1);
     }
 
     /**
@@ -292,20 +305,20 @@ public class RbdImage {
             throw new RbdException("Failed to resize the RBD image", r);
         }
     }
-    
+
     public void flatten() throws RbdException {
         int r = rbd.rbd_flatten(this.getPointer());
         if (r < 0) {
             throw new RbdException("Failed to flatten the RBD image", r);
         }
     }
-    
+
     /**
 	 * List children of a snapshot
-	 * 
-	 * @param snapname 
+	 *
+	 * @param snapname
 	 *         Name of the snapshot on RBD image
-	 * @return 
+	 * @return
 	 *         List of children with each element in the list in pool/image format
 	 * @throws RbdException
 	 */

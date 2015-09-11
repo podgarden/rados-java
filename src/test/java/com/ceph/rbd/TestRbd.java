@@ -234,6 +234,7 @@ public final class TestRbd {
         String imageName = "baseimage-" + System.currentTimeMillis();
         long imageSize = 10485760;
         String snapName = "mysnapshot";
+        int numSnaps = 32;
 
         try {
             // We only want layering and format 2
@@ -248,24 +249,26 @@ public final class TestRbd {
 
             assertTrue("The image wasn't the new (2) format", !oldFormat);
 
-            for (int i = 0; i < 10; i++) {
-              image.snapCreate(snapName + "-" + i);
-              image.snapProtect(snapName + "-" + i);
+            List<RbdSnapInfo> snapsEmpty = image.snapList();
+            assertEquals("There should not be any snapshots for the image", 0, snapsEmpty.size());
+
+            for (int i = 0; i < numSnaps; i++) {
+                image.snapCreate(snapName + "-" + i);
+                image.snapProtect(snapName + "-" + i);
             }
 
             List<RbdSnapInfo> snaps = image.snapList();
-            assertEquals("There should only be ten snapshots", 10, snaps.size());
+            assertEquals("The amount of snapshots does not match", numSnaps, snaps.size());
 
-            for (int i = 0; i < 10; i++) {
-              image.snapUnprotect(snapName + "-" + i);
-              image.snapRemove(snapName + "-" + i);
+            for (int i = 0; i < numSnaps; i++) {
+                image.snapUnprotect(snapName + "-" + i);
+                image.snapRemove(snapName + "-" + i);
             }
 
             rbd.close(image);
+            rbd.remove(imageName);
         } catch (RbdException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
-        } finally {
-            cleanupImage(rados, ioctx, imageName);
         }
     }
 

@@ -9,3 +9,9 @@ target
 /.classpath
 /.project
 /bin/
+build-indep-stamp
+configure-stamp
+debian/files
+debian/*.debhelper.log
+debian/*.substvars
+debian/librados-java

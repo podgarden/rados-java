@@ -28,20 +28,20 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import junit.framework.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.security.SecureRandom;
 import java.math.BigInteger;
 
-public final class TestRbd extends TestCase {
-
-    /**
-        All these variables can be overwritten, see the setUp() method
-     */
-    String configFile = "/etc/ceph/ceph.conf";
-    String id = "admin";
-    String pool = "rbd";
-
+public final class TestRbd {
     /**
         This test reads it's configuration from the environment
         Possible variables:
@@ -49,24 +49,46 @@ public final class TestRbd extends TestCase {
         * RADOS_JAVA_CONFIG_FILE
         * RADOS_JAVA_POOL
      */
-    public void setUp() {
-        if (System.getenv("RADOS_JAVA_CONFIG_FILE") != null) {
-            this.configFile = System.getenv("RADOS_JAVA_CONFIG_FILE");
-        }
 
-        if (System.getenv("RADOS_JAVA_ID") != null) {
-            this.id = System.getenv("RADOS_JAVA_ID");
-        }
+    private static String ENV_CONFIG_FILE = System.getenv("RADOS_JAVA_CONFIG_FILE");
+    private static String ENV_ID = System.getenv("RADOS_JAVA_ID");
+    private static String ENV_POOL = System.getenv("RADOS_JAVA_POOL");
 
-        if (System.getenv("RADOS_JAVA_POOL") != null) {
-            this.pool = System.getenv("RADOS_JAVA_POOL");
+    private static final String CONFIG_FILE = ENV_CONFIG_FILE == null ? "/etc/ceph/ceph.conf" : ENV_CONFIG_FILE;
+    private static final String ID = ENV_ID == null ? "admin" : ENV_ID;
+    private static final String POOL = ENV_POOL == null ? "rbd" : ENV_POOL;
+
+    private static Rados rados;
+    private static IoCTX ioctx;
+
+    private void cleanupImage(Rados r, IoCTX io, String image) throws RadosException, RbdException {
+        if (r != null) {
+            if (io != null) {
+                Rbd rbd = new Rbd(ioctx);
+                rbd.remove(image);
+            }
         }
+    }
+
+    @BeforeClass
+    public static void setUp() throws Exception {
+        rados = new Rados(ID);
+        rados.confReadFile(new File(CONFIG_FILE));
+        rados.connect();
+        ioctx = rados.ioCtxCreate(POOL);
+    }
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+        rados.ioCtxDestroy(ioctx);
+        rados.shutDown();
     }
 
     /**
         This test verifies if we can get the version out of librados
         It's currently hardcoded to expect at least 0.48.0
      */
+    @Test
     public void testGetVersion() {
         int[] version = Rbd.getVersion();
         assertTrue(version[0] >= 0);
@@ -74,18 +96,14 @@ public final class TestRbd extends TestCase {
         assertTrue(version[2] >= 8);
     }
 
-    public void testCreateListAndRemoveImage() {
+    @Test
+    public void testCreateListAndRemoveImage() throws Exception {
+        long imageSize = 10485760;
+        String imageName = "testimage1";
+        String newImageName = "testimage2";
+
         try {
-            Rados r = new Rados(this.id);
-            r.confReadFile(new File(this.configFile));
-            r.connect();
-            IoCTX io = r.ioCtxCreate(this.pool);
-
-            long imageSize = 10485760;
-            String imageName = "testimage1";
-            String newImageName = "testimage2";
-
-            Rbd rbd = new Rbd(io);
+            Rbd rbd = new Rbd(ioctx);
             rbd.create(imageName, imageSize);
 
             String[] images = rbd.list();
@@ -99,28 +117,20 @@ public final class TestRbd extends TestCase {
             assertEquals("The size of the image didn't match", imageSize, info.size);
 
             rbd.close(image);
-
-            rbd.remove(newImageName);
-
-            r.ioCtxDestroy(io);
         } catch (RbdException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
-        } catch (RadosException e) {
-            fail(e.getMessage() + ": " + e.getReturnValue());
+        } finally {
+            cleanupImage(rados, ioctx, newImageName);
         }
     }
 
-    public void testCreateFormatOne() {
+    @Test
+    public void testCreateFormatOne() throws Exception {
+        String imageName = "imageformat1";
+        long imageSize = 10485760;
+
         try {
-            String imageName = "imageformat1";
-            long imageSize = 10485760;
-
-            Rados r = new Rados(this.id);
-            r.confReadFile(new File(this.configFile));
-            r.connect();
-            IoCTX io = r.ioCtxCreate(this.pool);
-
-            Rbd rbd = new Rbd(io);
+            Rbd rbd = new Rbd(ioctx);
             rbd.create(imageName, imageSize);
 
             RbdImage image = rbd.open(imageName);
@@ -130,30 +140,23 @@ public final class TestRbd extends TestCase {
             assertTrue("The image wasn't the old (1) format", oldFormat);
 
             rbd.close(image);
-
-            rbd.remove(imageName);
-            r.ioCtxDestroy(io);
         } catch (RbdException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
-        } catch (RadosException e) {
-            fail(e.getMessage() + ": " + e.getReturnValue());
+        } finally {
+            cleanupImage(rados, ioctx, imageName);
         }
     }
 
-    public void testCreateFormatTwo() {
-        try {
-            String imageName = "imageformat2";
-            long imageSize = 10485760;
+    @Test
+    public void testCreateFormatTwo() throws Exception {
+        String imageName = "imageformat2";
+        long imageSize = 10485760;
 
+        try {
             // We only want layering and format 2
             int features = (1<<0);
 
-            Rados r = new Rados(this.id);
-            r.confReadFile(new File(this.configFile));
-            r.connect();
-            IoCTX io = r.ioCtxCreate(this.pool);
-
-            Rbd rbd = new Rbd(io);
+            Rbd rbd = new Rbd(ioctx);
             rbd.create(imageName, imageSize, features, 0);
 
             RbdImage image = rbd.open(imageName);
@@ -163,31 +166,25 @@ public final class TestRbd extends TestCase {
             assertTrue("The image wasn't the new (2) format", !oldFormat);
 
             rbd.close(image);
-
-            rbd.remove(imageName);
-            r.ioCtxDestroy(io);
         } catch (RbdException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
-        } catch (RadosException e) {
-            fail(e.getMessage() + ": " + e.getReturnValue());
+        } finally {
+            cleanupImage(rados, ioctx, imageName);
         }
     }
 
-    public void testCreateAndClone() {
-        try {
-            String imageName = "baseimage-" + System.currentTimeMillis();
-            long imageSize = 10485760;
-            String snapName = "mysnapshot";
+    @Test
+    public void testCreateAndClone() throws Exception {
+        String imageName = "baseimage-" + System.currentTimeMillis();
+        String childImageName = imageName + "-child1";
+        long imageSize = 10485760;
+        String snapName = "mysnapshot";
 
+        try {
             // We only want layering and format 2
             int features = (1<<0);
 
-            Rados r = new Rados(this.id);
-            r.confReadFile(new File(this.configFile));
-            r.connect();
-            IoCTX io = r.ioCtxCreate(this.pool);
-
-            Rbd rbd = new Rbd(io);
+            Rbd rbd = new Rbd(ioctx);
             rbd.create(imageName, imageSize, features, 0);
 
             RbdImage image = rbd.open(imageName);
@@ -202,42 +199,35 @@ public final class TestRbd extends TestCase {
             List<RbdSnapInfo> snaps = image.snapList();
             assertEquals("There should only be one snapshot", 1, snaps.size());
 
-            rbd.clone(imageName, snapName, io, imageName + "-child1", features, 0);
-
-            rbd.remove(imageName + "-child1");
+            rbd.clone(imageName, snapName, ioctx, childImageName, features, 0);
 
             boolean isProtected = image.snapIsProtected(snapName);
             assertTrue("The snapshot was not protected", isProtected);
+
+            rbd.remove(childImageName);
 
             image.snapUnprotect(snapName);
             image.snapRemove(snapName);
 
             rbd.close(image);
 
-            rbd.remove(imageName);
-            r.ioCtxDestroy(io);
+            rbd.remove (imageName);
         } catch (RbdException e) {
-            fail(e.getMessage() + ": " + e.getReturnValue());
-        } catch (RadosException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
         }
     }
 
-    public void testSnapList() {
-        try {
-            String imageName = "baseimage-" + System.currentTimeMillis();
-            long imageSize = 10485760;
-            String snapName = "mysnapshot";
+    @Test
+    public void testSnapList() throws Exception {
+        String imageName = "baseimage-" + System.currentTimeMillis();
+        long imageSize = 10485760;
+        String snapName = "mysnapshot";
 
+        try {
             // We only want layering and format 2
             int features = (1<<0);
 
-            Rados r = new Rados(this.id);
-            r.confReadFile(new File(this.configFile));
-            r.connect();
-            IoCTX io = r.ioCtxCreate(this.pool);
-
-            Rbd rbd = new Rbd(io);
+            Rbd rbd = new Rbd(ioctx);
             rbd.create(imageName, imageSize, features, 0);
 
             RbdImage image = rbd.open(imageName);
@@ -260,30 +250,23 @@ public final class TestRbd extends TestCase {
             }
 
             rbd.close(image);
-
-            rbd.remove(imageName);
-            r.ioCtxDestroy(io);
         } catch (RbdException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
-        } catch (RadosException e) {
-            fail(e.getMessage() + ": " + e.getReturnValue());
+        } finally {
+            cleanupImage(rados, ioctx, imageName);
         }
     }
 
-    public void testCreateAndWriteAndRead() {
-        try {
-            String imageName = "imageforwritetest";
-            long imageSize = 10485760;
+    @Test
+    public void testCreateAndWriteAndRead() throws Exception {
+        String imageName = "imageforwritetest";
+        long imageSize = 10485760;
 
+        try {
             // We only want layering and format 2
             int features = (1<<0);
 
-            Rados r = new Rados(this.id);
-            r.confReadFile(new File(this.configFile));
-            r.connect();
-            IoCTX io = r.ioCtxCreate(this.pool);
-
-            Rbd rbd = new Rbd(io);
+            Rbd rbd = new Rbd(ioctx);
             rbd.create(imageName, imageSize, features, 0);
 
             RbdImage image = rbd.open(imageName);
@@ -301,31 +284,24 @@ public final class TestRbd extends TestCase {
             assertEquals("Did din't get back what we wrote", new String(data), buf);
 
             rbd.close(image);
-
-            rbd.remove(imageName);
-            r.ioCtxDestroy(io);
         } catch (RbdException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
-        } catch (RadosException e) {
-            fail(e.getMessage() + ": " + e.getReturnValue());
+        } finally {
+            cleanupImage(rados, ioctx, imageName);
         }
     }
 
-    public void testCopy() {
-        try {
-            String imageName1 = "imagecopy1";
-            String imageName2 = "imagecopy2";
-            long imageSize = 10485760;
+    @Test
+    public void testCopy() throws Exception {
+        String imageName1 = "imagecopy1";
+        String imageName2 = "imagecopy2";
+        long imageSize = 10485760;
 
+        try {
             // We only want layering and format 2
             int features = (1<<0);
 
-            Rados r = new Rados(this.id);
-            r.confReadFile(new File(this.configFile));
-            r.connect();
-            IoCTX io = r.ioCtxCreate(this.pool);
-
-            Rbd rbd = new Rbd(io);
+            Rbd rbd = new Rbd(ioctx);
             rbd.create(imageName1, imageSize, features, 0);
             rbd.create(imageName2, imageSize, features, 0);
 
@@ -344,33 +320,25 @@ public final class TestRbd extends TestCase {
 
             rbd.close(image1);
             rbd.close(image2);
-
-            rbd.remove(imageName1);
-            rbd.remove(imageName2);
-
-            r.ioCtxDestroy(io);
         } catch (RbdException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
-        } catch (RadosException e) {
-            fail(e.getMessage() + ": " + e.getReturnValue());
+        } finally {
+            cleanupImage(rados, ioctx, imageName1);
+            cleanupImage(rados, ioctx, imageName2);
         }
     }
 
-    public void testResize() {
-        try {
-            String imageName = "imageforresizetest";
-            long initialSize = 10485760;
-            long newSize = initialSize * 2;
+    @Test
+    public void testResize() throws Exception {
+        String imageName = "imageforresizetest";
+        long initialSize = 10485760;
+        long newSize = initialSize * 2;
 
+        try {
             // We only want layering and format 2
             int features = (1<<0);
 
-            Rados r = new Rados(this.id);
-            r.confReadFile(new File(this.configFile));
-            r.connect();
-            IoCTX io = r.ioCtxCreate(this.pool);
-
-            Rbd rbd = new Rbd(io);
+            Rbd rbd = new Rbd(ioctx);
             rbd.create(imageName, initialSize, features, 0);
             RbdImage image = rbd.open(imageName);
             image.resize(newSize);
@@ -379,28 +347,23 @@ public final class TestRbd extends TestCase {
             assertEquals("The new size of the image didn't match", newSize, info.size);
 
             rbd.close(image);
-
-            rbd.remove(imageName);
-            r.ioCtxDestroy(io);
         } catch (RbdException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
-        } catch (RadosException e) {
-            fail(e.getMessage() + ": " + e.getReturnValue());
+        } finally {
+            cleanupImage(rados, ioctx, imageName);
         }
     }
-    
-	public void testCloneAndFlatten() {
-		try {
-			String parentImageName = "parentimage";
-			String cloneImageName = "childimage";
-			String snapName = "snapshot";
-			long imageSize = 10485760;
 
-			Rados r = new Rados(this.id);
-			r.confReadFile(new File(this.configFile));
-			r.connect();
-			IoCTX io = r.ioCtxCreate(this.pool);
-			Rbd rbd = new Rbd(io);
+  @Test
+	public void testCloneAndFlatten() throws Exception {
+    String parentImageName = "parentimage";
+    String cloneImageName = "childimage";
+    String snapName = "snapshot";
+    long imageSize = 10485760;
+
+		try {
+
+			Rbd rbd = new Rbd(ioctx);
 
 			// We only want layering and format 2
 			int features = (1 << 0);
@@ -430,7 +393,7 @@ public final class TestRbd extends TestCase {
 			assertTrue("The snapshot was not protected", isProtected);
 
 			// Clone the parent image using the snapshot
-			rbd.clone(parentImageName, snapName, io, cloneImageName, features, 0);
+			rbd.clone(parentImageName, snapName, ioctx, cloneImageName, features, 0);
 
 			// Open the cloned image
 			RbdImage cloneImage = rbd.open(cloneImageName);
@@ -451,30 +414,22 @@ public final class TestRbd extends TestCase {
 			// Close both the parent and cloned images
 			rbd.close(cloneImage);
 			rbd.close(parentImage);
-
-			// Delete the parent image first and the cloned image after
-			rbd.remove(parentImageName);
-			rbd.remove(cloneImageName);
-
-			r.ioCtxDestroy(io);
 		} catch (RbdException e) {
 			fail(e.getMessage() + ": " + e.getReturnValue());
-		} catch (RadosException e) {
-			fail(e.getMessage() + ": " + e.getReturnValue());
-		}
+		} finally {
+        cleanupImage(rados, ioctx, parentImageName);
+        cleanupImage(rados, ioctx, cloneImageName);
+    }
 	}
-	
-	public void testListImages() {
-		try {
-			Rados r = new Rados(this.id);
-			r.confReadFile(new File(this.configFile));
-			r.connect();
-			IoCTX io = r.ioCtxCreate(this.pool);
-			Rbd rbd = new Rbd(io);
 
-			String testImage = "testimage";
-			long imageSize = 10485760;
-			int imageCount = 3;
+  @Test
+	public void testListImages() throws Exception {
+    String testImage = "testimage";
+    long imageSize = 10485760;
+    int imageCount = 3;
+
+		try {
+			Rbd rbd = new Rbd(ioctx);
 
 			for (int i = 1; i <= imageCount; i++) {
 				rbd.create(testImage + i, imageSize);
@@ -487,7 +442,7 @@ public final class TestRbd extends TestCase {
 			for (int i = 1; i <= imageCount; i++) {
 				assertTrue("Pool does not contain image testimage" + i, imageList.contains(testImage + i));
 			}
-			
+
 			// List images and provide initial buffer size
 			imageList = null;
 			imageList = Arrays.asList(rbd.list(testImage.length()));
@@ -496,26 +451,19 @@ public final class TestRbd extends TestCase {
 			for (int i = 1; i <= imageCount; i++) {
 				assertTrue("Pool does not contain image testimage" + i, imageList.contains(testImage + i));
 			}
-
-			for (int i = 1; i <= imageCount; i++) {
-				rbd.remove(testImage + i);
-			}
-
-			r.ioCtxDestroy(io);
 		} catch (RbdException e) {
 			fail(e.getMessage() + ": " + e.getReturnValue());
-		} catch (RadosException e) {
-			fail(e.getMessage() + ": " + e.getReturnValue());
-		}
+		} finally {
+      for (int i = 1; i <= imageCount; i++) {
+        cleanupImage(rados, ioctx, testImage + i);
+      }
+    }
 	}
-	
-	public void testListChildren() {
+
+  @Test
+	public void testListChildren() throws Exception {
 		try {
-			Rados r = new Rados(this.id);
-			r.confReadFile(new File(this.configFile));
-			r.connect();
-			IoCTX io = r.ioCtxCreate(this.pool);
-			Rbd rbd = new Rbd(io);
+			Rbd rbd = new Rbd(ioctx);
 
 			String parentImageName = "parentimage";
 			String childImageName = "childImage";
@@ -552,7 +500,7 @@ public final class TestRbd extends TestCase {
 
 			for (int i = 1; i <= childCount; i++) {
 				// Clone the parent image using the snapshot
-				rbd.clone(parentImageName, snapName, io, childImageName + i, features, 0);
+				rbd.clone(parentImageName, snapName, ioctx, childImageName + i, features, 0);
 			}
 
 			// List the children of snapshot
@@ -562,7 +510,7 @@ public final class TestRbd extends TestCase {
 			assertEquals("Snapshot should have " + childCount + " children", childCount, children.size());
 
 			for (int i = 1; i <= childCount; i++) {
-				assertTrue(this.pool + '/' + childImageName + i + " should be listed as a child", children.contains(this.pool + '/' + childImageName + i));
+				assertTrue(POOL + '/' + childImageName + i + " should be listed as a child", children.contains(POOL + '/' + childImageName + i));
 			}
 
 			// Delete the cloned images
@@ -585,11 +533,7 @@ public final class TestRbd extends TestCase {
 
 			// Delete the parent image
 			rbd.remove(parentImageName);
-
-			r.ioCtxDestroy(io);
 		} catch (RbdException e) {
-			fail(e.getMessage() + ": " + e.getReturnValue());
-		} catch (RadosException e) {
 			fail(e.getMessage() + ": " + e.getReturnValue());
 		}
 	}

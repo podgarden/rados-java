@@ -97,6 +97,18 @@ public final class TestRbd {
     }
 
     @Test
+    public void testEmptyListImages() throws Exception {
+        try {
+            Rbd rbd = new Rbd(ioctx);
+
+            List<String> imageList = Arrays.asList(rbd.list());
+            assertTrue("There were more then 0 (" + imageList.size() + ") images in the pool", imageList.size() == 0);
+        } catch (RbdException e) {
+            fail(e.getMessage() + ": " + e.getReturnValue());
+        }
+    }
+
+    @Test
     public void testCreateListAndRemoveImage() throws Exception {
         long imageSize = 10485760;
         String imageName = "testimage1";

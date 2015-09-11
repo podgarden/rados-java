@@ -35,7 +35,7 @@ and use "admin" as a cephx id.
 
 All tests will be performed on the pools "data" (RADOS) and "rbd" (RBD).
 
-These pools have to EXIST prior to running the tests.
+These pools have to EXIST prior to running the tests and should be EMPTY!
 
 DO NOT RUN THESE TESTS ON A PRODUCTION PLATFORM.
 

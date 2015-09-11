@@ -3,7 +3,7 @@
 export DH_VERBOSE=1
 export DH_OPTIONS
 
-VERSION := $(shell cat build.properties |grep version|cut -d '=' -f 2)
+VERSION := $(shell grep '^    <version>' pom.xml| cut -d'>' -f2 |cut -d'<' -f1)
 
 configure: configure-stamp
 configure-stamp:
@@ -15,8 +15,8 @@ build: build-indep
 build-indep: build-indep-stamp
 
 build-indep-stamp: configure
-	ant clean
-	ant jar
+	mvn clean
+	mvn -DskipTests install
 	touch $@
 
 clean:
@@ -33,6 +33,7 @@ install:
 	mkdir -p debian/tmp/usr/share/java
 	cp target/rados-${VERSION}.jar debian/tmp/usr/share/java
 	dh_link usr/share/java/rados-${VERSION}.jar usr/share/java/rados.jar
+	cp target/dependencies/jna*.jar debian/tmp/usr/share/java
 
 	dh_installdirs
 	dh_install
@@ -40,7 +41,6 @@ install:
 binary: install
 	dh_install
 	dh_installchangelogs
-	dh_installdocs
 	dh_link
 	dh_compress
 	dh_fixperms

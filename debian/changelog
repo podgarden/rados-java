@@ -1,3 +1,9 @@
+librados-java (1.0) unstable; urgency=low
+
+  * Release of version 1.0
+
+ -- Wido den Hollander <wido@42on.com>  Fri, 11 Sep 2015 14:26:19 +0200
+
 librados-java (0.1.1) unstable; urgency=low
 
   * Release of version 0.1.1

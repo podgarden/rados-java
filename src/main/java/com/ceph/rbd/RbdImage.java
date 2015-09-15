@@ -185,7 +185,7 @@ public class RbdImage {
      * @throws RbdException
      */
     public List<RbdSnapInfo> snapList() throws RbdException {
-        return snapList(16);
+        return snapList(128);
     }
 
     /**
@@ -197,22 +197,15 @@ public class RbdImage {
      * @throws RbdException
      */
     public List<RbdSnapInfo> snapList(int initialBufferSize) throws RbdException {
-        IntByReference numSnaps = new IntByReference(1);
-        RbdSnapInfo[] snaps = new RbdSnapInfo[numSnaps.getValue()];
+        IntByReference maxSnaps = new IntByReference(initialBufferSize);
+        RbdSnapInfo[] snaps;
+        int snapCount;
 
-        int r = rbd.rbd_snap_list(this.getPointer(), snaps, numSnaps);
-        if (r < 0 && r != -34) {
-            throw new RbdException("Failed to list RBD snapshots", r);
-        }
-
-        // -34 (-ERANGE) is returned if the buffers are not big enough
-        if (r == -34 || numSnaps.getValue() > initialBufferSize) {
-            snaps = new RbdSnapInfo[numSnaps.getValue()];
-            r = rbd.rbd_snap_list(this.getPointer(), snaps, numSnaps);
-            if (r < 0) {
-                throw new RbdException("Failed to list RBD snapshots", r);
-            }
-    		}
+        do {
+            snaps = new RbdSnapInfo[maxSnaps.getValue()];
+            snapCount = rbd.rbd_snap_list(this.getPointer(), snaps, maxSnaps);
+        // -34 is -ERANGE
+        } while (snapCount == -34);
 
         /*
          * Before clearing the backing list (well, just the name strings)
@@ -223,13 +216,13 @@ public class RbdImage {
          * it does work. Note that this should be fine as long as you don't
          * re-use the RbdSnapInfo as a parameter to another native function.
          */
-        for (int i = 0; i < numSnaps.getValue(); i++) {
-          snaps[i].setAutoSynch(false);
+        for (int i = 0; i < snapCount; i++) {
+            snaps[i].setAutoSynch(false);
         }
 
         rbd.rbd_snap_list_end(snaps);
 
-        return Arrays.asList(snaps).subList(0, numSnaps.getValue() - 1);
+        return Arrays.asList(snaps).subList(0, snapCount);
     }
 
     /**

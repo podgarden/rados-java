@@ -235,6 +235,7 @@ public final class TestRbd {
         long imageSize = 10485760;
         String snapName = "mysnapshot";
         int numSnaps = 32;
+        int initialBufferSize = 16;
 
         try {
             // We only want layering and format 2
@@ -249,7 +250,7 @@ public final class TestRbd {
 
             assertTrue("The image wasn't the new (2) format", !oldFormat);
 
-            List<RbdSnapInfo> snapsEmpty = image.snapList();
+            List<RbdSnapInfo> snapsEmpty = image.snapList(initialBufferSize);
             assertEquals("There should not be any snapshots for the image", 0, snapsEmpty.size());
 
             for (int i = 0; i < numSnaps; i++) {
@@ -257,7 +258,7 @@ public final class TestRbd {
                 image.snapProtect(snapName + "-" + i);
             }
 
-            List<RbdSnapInfo> snaps = image.snapList();
+            List<RbdSnapInfo> snaps = image.snapList(initialBufferSize);
             assertEquals("The amount of snapshots does not match", numSnaps, snaps.size());
 
             for (int i = 0; i < numSnaps; i++) {

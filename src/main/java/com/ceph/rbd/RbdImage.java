@@ -159,7 +159,7 @@ public class RbdImage {
     /**
      * Tells if a snapshot is protected or not
      *
-     * @param snapname
+     * @param snapName
      *         The name of the snapshot
      * @return boolean
      * @throws RbdException

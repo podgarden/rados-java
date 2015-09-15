@@ -58,7 +58,7 @@ public class Rbd {
      * @param size
      *         The size of the new image in bytes
      * @param order
-     *         Object/block size, as a power of two (object size == 1 << order)
+     *         Object/block size, as a power of two
      * @throws RbdException
      */
     public void create(String name, long size, int order) throws RbdException {
@@ -92,7 +92,7 @@ public class Rbd {
      * @param features
      *         Initial feature bits
      * @param order
-     *         Object/block size, as a power of two (object size == 1 << order)
+     *         Object/block size, as a power of two
      * @throws RbdException
      */
     public void create(String name, long size, long features, int order) throws RbdException {
@@ -128,7 +128,7 @@ public class Rbd {
      * @param features
      *         Initial feature bits
      * @param order
-     *         Object/block size, as a power of two (object size == 1 << order)
+     *         Object/block size, as a power of two
      * @param stripe_unit
      *         Stripe unit size, in bytes.
      * @param stripe_count
@@ -183,10 +183,10 @@ public class Rbd {
 		int initialBufferSize = 1024;
 		return list(initialBufferSize);
 	}
-	
+
 	/**
 	 * List all RBD images in this pool
-	 * 
+	 *
 	 * @param initialBufferSize
 	 * 		   Initial size of the byte buffer holding image names
 	 * @return String[]
@@ -198,10 +198,10 @@ public class Rbd {
 		byte[] names = new byte[initialBufferSize];
 
 		int r = rbd.rbd_list(this.io, names, sizePointer);
-		if (r < 0 && r != -34) { 
+		if (r < 0 && r != -34) {
 			throw new RbdException("Failed to list RBD images", r);
 		}
-		
+
 		// -34 (-ERANGE) is returned if the byte buffers are not big enough
 		if (r == -34 || sizePointer.getValue() > initialBufferSize) {
 			names = new byte[(int) sizePointer.getValue()];
@@ -236,7 +236,7 @@ public class Rbd {
      *
      * @param name
      *         The name of the image you want to open
-     * @param snapshot
+     * @param snapName
      *         The name of the snapshot to open
      * @throws RbdException
      * @return RbdImage
@@ -272,7 +272,7 @@ public class Rbd {
      *
      * @param name
      *         The name of the image you want to open
-     * @param snapshot
+     * @param snapName
      *         The name of the snapshot to open
      * @throws RbdException
      * @return RbdImage
@@ -314,7 +314,7 @@ public class Rbd {
      * @param features
      *         The RBD features
      * @param order
-     *         Object/block size, as a power of two (object size == 1 << order)
+     *         Object/block size, as a power of two
      * @param stripe_unit
      *         Stripe unit size, in bytes.
      * @param stripe_count
@@ -345,7 +345,7 @@ public class Rbd {
      * @param features
      *         The RBD features
      * @param order
-     *         Object/block size, as a power of two (object size == 1 << order)
+     *         Object/block size, as a power of two
      * @throws RbdException
      */
     public void clone(String parentImage, String parentSnap, IoCTX childIo,

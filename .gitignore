@@ -15,3 +15,5 @@ debian/files
 debian/*.debhelper.log
 debian/*.substvars
 debian/librados-java
+pom.xml.releaseBackup
+release.properties

@@ -268,10 +268,14 @@ public class Rados extends RadosBase {
     }
 
     /**
-     * Finalize the Rados connection
+     * Java finalizer to make sure librados is correctly released if shutDown has not been called explicitly.
      */
-    public void finalize() throws Throwable {
-        rados.rados_shutdown(this.clusterPtr);
+    protected void finalize() throws Throwable {
+        // make sure that librados is correctly released
+        if (this.clusterPtr != null) {
+            rados.rados_shutdown(this.clusterPtr);
+            this.clusterPtr = null;
+        }
         super.finalize();
     }
 

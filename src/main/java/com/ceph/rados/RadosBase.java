@@ -64,31 +64,33 @@ public class RadosBase {
         return result;
     }
 
-
     private void throwException(int errorCode, String msg) throws RadosException {
-        final String errorName = ErrorCode.getErrorName(errorCode);
-        final String errorMessage = ErrorCode.getErrorMessage(errorCode);
-        final String finalMessage = String.format("%s; %s: %s", msg, errorName, errorMessage);
-        final ErrorCode errorCodeEnum = ErrorCode.getEnum(errorCode);
-        switch (errorCodeEnum) {
-            case EPERM:
-                throw new RadosPermissionException(finalMessage, errorCode);
-            case ENOENT:
-                throw new RadosNotFoundException(finalMessage, errorCode);
-            case EINVAL:
-                throw new RadosInvalidArgumentException(finalMessage, errorCode);
-            case EROFS:
-                throw new RadosReadOnlyException(finalMessage, errorCode);
-            case EDOM:
-                throw new RadosArgumentOutOfDomainException(finalMessage, errorCode);
-            case EISCONN:
-                throw new RadosAlreadyConnectedException(finalMessage, errorCode);
-            case ETIMEDOUT:
-                throw new RadosTimeoutException(finalMessage, errorCode);
-            case EINPROGRESS:
-                throw new RadosOperationInProgressException(finalMessage, errorCode);
-            default:
-                throw new RadosException(finalMessage, errorCode);
+        String exceptionMessage;
+        ErrorCode errorCodeEnum = ErrorCode.getEnum(errorCode);
+        if (errorCodeEnum != null) {
+            exceptionMessage = String.format("%s; %s: %s", msg, errorCodeEnum.name(), errorCodeEnum.getErrorMessage());
+            switch (errorCodeEnum) {
+                case EPERM:
+                    throw new RadosPermissionException(exceptionMessage, errorCode);
+                case ENOENT:
+                    throw new RadosNotFoundException(exceptionMessage, errorCode);
+                case EINVAL:
+                    throw new RadosInvalidArgumentException(exceptionMessage, errorCode);
+                case EROFS:
+                    throw new RadosReadOnlyException(exceptionMessage, errorCode);
+                case EDOM:
+                    throw new RadosArgumentOutOfDomainException(exceptionMessage, errorCode);
+                case EISCONN:
+                    throw new RadosAlreadyConnectedException(exceptionMessage, errorCode);
+                case ETIMEDOUT:
+                    throw new RadosTimeoutException(exceptionMessage, errorCode);
+                case EINPROGRESS:
+                    throw new RadosOperationInProgressException(exceptionMessage, errorCode);
+            }
+        } else {
+            exceptionMessage = String.format("%s; error code: %d", msg, errorCode);
         }
+
+        throw new RadosException(exceptionMessage, errorCode);
     }
 }

@@ -24,6 +24,7 @@ package com.ceph.rados;
 import static com.ceph.rados.Library.rados;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Callable;
 
 import com.ceph.rados.exceptions.RadosException;
 
@@ -31,7 +32,7 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
 
-public class ReadOp {
+public class ReadOp extends RadosBase implements AutoCloseable {
 
     public static class ReadResult {
         private final ByteBuffer buf;
@@ -48,10 +49,33 @@ public class ReadOp {
         public ByteBuffer getBuffer() { return buf; }
         public long getBytesRead() { return bytesread.getValue(); }
         public int  getRVal() { return rval.getValue(); }
+
+        /**
+         * Use this method if you do error handling with exceptions.
+         *
+         * Use it like the following:
+         * ReadOp readOp = iocontext.readOpCreate();
+         * ReadOp.ReadResult readResult = readOp.queueRead(offset, size);
+         * ...
+         * readOp.operate(name, flags);
+         * readResult.raiseExceptionOnError();
+         * // here you can be sure that the read operation has been successful
+         *
+         *
+         * @param errorMsg the error message to use for the exception. Can be a format string
+         * @param errorMsgArgs the arguments for the error message if the message is a format string
+         * @throws RadosException Thrown if the result of the operation is not successful
+         */
+        public void raiseExceptionOnError(String errorMsg, Object... errorMsgArgs) throws RadosException {
+            int returnCode = getRVal();
+            if (returnCode < 0) {
+                throwException(returnCode, String.format(errorMsg, errorMsgArgs));
+            }
+        }
     }
 
     private final Pointer ioctxPtr;
-    private final Pointer readOpPtr;
+    private Pointer readOpPtr;
 
     /**
      * Create a new read_op object.
@@ -83,15 +107,29 @@ public class ReadOp {
         rados.rados_read_op_read(readOpPtr, offset, len, r.getBuffer(), r.bytesread, r.rval);
         return r;
     }
-    
+
     /**
      * Executes operations added to the rados_read_op_t.
      * 
-     * @param oid
-     * @param flags
+     * @param oid the name of the object to operate on
+     * @param flags the flags for the operation
      * @return rados_read_op_operate return value
+     * @see librados operation flags
      */
-    public int operate(String oid, int flags) {
-        return rados.rados_read_op_operate(readOpPtr, ioctxPtr, oid, flags);
+    public void operate(final String oid, final int flags) throws RadosException {
+        handleReturnCode(new Callable<Number>() {
+            @Override
+            public Number call() throws Exception {
+                return rados.rados_read_op_operate(readOpPtr, ioctxPtr, oid, flags);
+            }
+        }, "ReadOp.operate(%s, %d)", oid, flags);
+    }
+
+    @Override
+    public void close() {
+        if (readOpPtr != null) {
+            rados.rados_release_read_op(readOpPtr);
+            readOpPtr = null;
+        }
     }
 }

@@ -33,6 +33,18 @@ import java.util.concurrent.Callable;
 import static com.ceph.rados.Library.rados;
 
 public class Rados extends RadosBase {
+    /**
+     * flags for ReadOp.operate and (maybe later) WriteOp.operate
+     * See librados operate flags for more information
+     */
+    public static int OPERATION_NOFLAG             = 0;
+    public static int OPERATION_BALANCE_READS      = 1;
+    public static int OPERATION_LOCALIZE_READS     = 2;
+    public static int OPERATION_ORDER_READS_WRITES = 4;
+    public static int OPERATION_IGNORE_CACHE       = 8;
+    public static int OPERATION_SKIPRWLOCKS        = 16;
+    public static int OPERATION_IGNORE_OVERLAY     = 32;
+    public static int OPERATION_FULL_TRY           = 64;
 
     protected Pointer clusterPtr;
     private boolean connected;

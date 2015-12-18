@@ -54,14 +54,14 @@ public enum ErrorCode {
     EROFS(-30, "Read-only file system"),
     EMLINK(-31, "Too many links"),
     EPIPE(-32, "Broken pipe"),
-    EDOM(-33, "Math argument out of domain of func"),
-    ERANGE(-34, "Math result not representable"),
+    EDOM(-33, "Argument out of range"),
+    ERANGE(-34, "Result too large"),
     EDEADLK(-35, "Resource deadlock would occur"),
-    ENAMETOOLONG(-36, "File name too long"),
+    ENAMETOOLONG(-36, "Name too long"),
     ENOLCK(-37, "No record locks available"),
     ENOSYS(-38, "Function not implemented"),
     ENOTEMPTY(-39, "Directory not empty"),
-    ELOOP(-40, "Too many symbolic links encountered"),
+    ELOOP(-40, "Too many symbolic links"),
     ENOMSG(-42, "No errorMessage of desired type"),
     EIDRM(-43, "Identifier removed"),
     ECHRNG(-44, "Channel number out of range"),
@@ -79,9 +79,9 @@ public enum ErrorCode {
     EBADRQC(-56, "Invalid request errorCode"),
     EBADSLT(-57, "Invalid slot"),
     EBFONT(-59, "Bad font file format"),
-    ENOSTR(-60, "Device not a stream"),
+    ENOSTR(-60, "Not a stream"),
     ENODATA(-61, "No data available"),
-    ETIME(-62, "Timer expired"),
+    ETIME(-62, "Stream timeout"),
     ENOSR(-63, "Out of streams resources"),
     ENONET(-64, "Machine is not on the network"),
     ENOPKG(-65, "Package not installed"),
@@ -155,11 +155,10 @@ public enum ErrorCode {
     private final int errorCode;
     private final String errorMessage;
 
-    private ErrorCode(int errorCode, String errorMessage) {
+    ErrorCode(int errorCode, String errorMessage) {
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
     }
-
 
     public int getErrorCode() {
         return errorCode;
@@ -175,10 +174,9 @@ public enum ErrorCode {
      * @return appropriate name of the error depending on the code
      */
     public static String getErrorName(int errorCode) {
-        for (ErrorCode value : values()) {
-            if(value.errorCode == errorCode) {
-                return value.name();
-            }
+        ErrorCode error = ErrorCode.getEnum(errorCode);
+        if (error != null) {
+            return error.name();
         }
         return "UNKNOWN_ERROR";
     }
@@ -188,12 +186,11 @@ public enum ErrorCode {
      * @return appropriate message containing an explanation of the code
      */
     public static String getErrorMessage(int errorCode) {
-        for (ErrorCode value : values()) {
-            if(value.errorCode == errorCode) {
-                return value.errorMessage;
-            }
+        ErrorCode error = ErrorCode.getEnum(errorCode);
+        if (error != null) {
+            return error.getErrorMessage();
         }
-        return "Unknown error code: " + errorCode;
+        return String.format("Unknown error code: %d", errorCode);
     }
 
     /**
@@ -208,5 +205,4 @@ public enum ErrorCode {
         }
         return null;
     }
-
 }

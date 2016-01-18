@@ -105,7 +105,6 @@ public class Rados extends RadosBase {
      * @throws RadosException
      */
     public void confReadFile(final File file) throws RadosException {
-        this.verifyConnected(false);
         handleReturnCode(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
@@ -124,7 +123,6 @@ public class Rados extends RadosBase {
      * @throws RadosException
      */
     public void confSet(final String option, final String value) throws RadosException {
-        this.verifyConnected(false);
         handleReturnCode(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {

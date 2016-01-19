@@ -406,7 +406,7 @@ public final class TestRados {
         }
     }
 
-
+    @Test
     public void testListPartial() {
         /**
          * The object we will write to with the data

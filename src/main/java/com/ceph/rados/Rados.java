@@ -402,4 +402,56 @@ public class Rados extends RadosBase {
             this.clusterPtr = null;
         }
     }
+
+    public RadosCommandResult executeRadosMonCommand(final String command, final String in) throws RadosException {
+        final String[] cmd = command.split(" ");
+
+        final PointerByReference outBuf = new PointerByReference();
+        final IntByReference outBufLen = new IntByReference();
+        final PointerByReference statusBuf = new PointerByReference();
+        final IntByReference statusBufLen = new IntByReference();
+
+        int r = rados.rados_mon_command(this.clusterPtr, cmd, cmd.length, in, in.length(), outBuf, outBufLen, statusBuf, statusBufLen);
+
+        if (r != 0)
+            throw new RadosException("Error when executing Rados monitor command", r);
+
+        final String out = (outBuf.getValue() == null ? "" : new String(outBuf.getValue().getByteArray(0, outBufLen.getValue())));
+        final String status = (statusBuf.getValue() == null ? "" : new String(statusBuf.getValue().getByteArray(0, statusBufLen.getValue())));
+
+        return new RadosCommandResult(out, status);
+    }
+
+
+    /**
+     * Result returned by RadosCommands
+     */
+    public class RadosCommandResult {
+
+        private final String output;
+        private final String statusOutput;
+
+        protected RadosCommandResult(String output, String statusOutput) {
+            this.output = output;
+            this.statusOutput = statusOutput;
+        }
+
+        /**
+         * Get the output of the RadosCommand
+         *
+         * @return a String containing the output of the RadosCommand
+         */
+        public String getOutput() {
+            return output;
+        }
+
+        /**
+         * Get the status of the RadosCommand
+         *
+         * @return a String containing the status of the RadosCommand
+         */
+        public String getStatus() {
+            return statusOutput;
+        }
+    }
 }

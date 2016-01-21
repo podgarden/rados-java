@@ -40,6 +40,7 @@ import java.util.Random;
 
 import com.sun.jna.Pointer;
 
+import com.sun.xml.internal.ws.api.message.ExceptionHasMessage;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -496,5 +497,13 @@ public final class TestRados {
             System.gc();
             System.runFinalization();
         }
+    }
+
+    @Test
+    public void testRadosCommandMon() throws Exception {
+        Rados.RadosCommandResult result = rados.executeRadosMonCommand("{\"prefix\":\"quorum_status\"}", "");
+
+        assertEquals(0, result.getStatus().length());
+        assertTrue(result.getOutput().contains("\"quorum\""));
     }
 }

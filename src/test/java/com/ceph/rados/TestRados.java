@@ -19,18 +19,12 @@
 
 package com.ceph.rados;
 
-import com.ceph.rados.Rados;
 import com.ceph.rados.ReadOp.ReadResult;
 import com.ceph.rados.jna.RadosClusterInfo;
 import com.ceph.rados.jna.RadosObjectInfo;
 import com.ceph.rados.jna.RadosPoolInfo;
-import com.ceph.rados.IoCTX;
-import com.ceph.rados.ReadOp;
 import com.ceph.rados.exceptions.ErrorCode;
 import com.ceph.rados.exceptions.RadosException;
-import com.ceph.rados.jna.RadosClusterInfo;
-import com.ceph.rados.jna.RadosObjectInfo;
-import com.ceph.rados.jna.RadosPoolInfo;
 
 import java.io.File;
 import java.util.Arrays;
@@ -40,7 +34,6 @@ import java.util.Random;
 
 import com.sun.jna.Pointer;
 
-import com.sun.xml.internal.ws.api.message.ExceptionHasMessage;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -500,10 +493,36 @@ public final class TestRados {
     }
 
     @Test
-    public void testRadosCommandMon() throws Exception {
-        Rados.RadosCommandResult result = rados.executeRadosMonCommand("{\"prefix\":\"quorum_status\"}", "");
+    public void testRadosMonCommand() throws Exception {
+        Rados.RadosCommandResult result = rados.executeRadosMonCommand(new String[] {"{\"prefix\":\"quorum_status\"}"}, "");
 
         assertEquals(0, result.getStatus().length());
         assertTrue(result.getOutput().contains("\"quorum\""));
+    }
+
+    @Test
+    public void testRadosMonCommandTarget() throws Exception {
+        final String monName = rados.confGet("mon initial members").split(" ")[0]; // get name of first monitor
+
+        Rados.RadosCommandResult result = rados.executeRadosMonCommandTarget(new String[]{"{\"prefix\":\"quorum_status\"}"}, monName, "");
+
+        assertEquals(0, result.getStatus().length());
+        assertTrue(result.getOutput().contains("\"quorum\""));
+    }
+
+    @Test
+    public void testRadosOsdCommand() throws Exception {
+        Rados.RadosCommandResult result1 = rados.executeRadosMonCommand(new String[] {"{\"prefix\":\"osd ls\"}"}, "");
+
+        final String osds[] = result1.getOutput().split("\n");
+
+        for(String osd : osds){
+            final int osdnum = Integer.parseInt(osd);
+
+            Rados.RadosCommandResult result = rados.executeRadosOsdCommand(new String[]{"{\"prefix\":\"version\"}"}, osdnum, "");
+
+            assertEquals(0, result.getStatus().length());
+            assertTrue(result.getOutput().contains("ceph version"));
+        }
     }
 }

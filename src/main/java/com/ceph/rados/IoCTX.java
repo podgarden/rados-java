@@ -561,6 +561,10 @@ public class IoCTX extends RadosBase {
         return new ReadOp(getPointer(), rados.rados_create_read_op());
     }
 
+    /**
+     * Instead of releasing the read operation directly, better use ReadOp.close
+     */
+    @Deprecated
     public void readOpRelease(ReadOp read_op) {
         rados.rados_release_read_op(read_op.getPointer());
     }

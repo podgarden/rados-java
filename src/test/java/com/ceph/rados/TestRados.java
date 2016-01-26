@@ -20,6 +20,7 @@
 package com.ceph.rados;
 
 import com.ceph.rados.ReadOp.ReadResult;
+import com.ceph.rados.exceptions.RadosNotFoundException;
 import com.ceph.rados.jna.RadosClusterInfo;
 import com.ceph.rados.jna.RadosObjectInfo;
 import com.ceph.rados.jna.RadosPoolInfo;
@@ -316,22 +317,51 @@ public final class TestRados {
         assertTrue("The timestamp was in the future. Clocks synced?", (now + 5) >= time);
     }
 
-    public void testReadRanges() {
-        try {
-            final String oid = "foobar.txt";
-            final String content = "The quick brown fox jumped over the lazy dog.";
-            ioctx.write(oid, content);
-            final ReadOp rop = ioctx.readOpCreate();
+    @Test
+    public void testReadRanges() throws Exception {
+        final String oid = "foobar.txt";
+        final String content = "The quick brown fox jumped over the lazy dog.";
+        ioctx.write(oid, content);
+
+        try (final ReadOp rop = ioctx.readOpCreate()){
             final Map<ReadResult,String> data = new HashMap<>();
             data.put(rop.queueRead(0, 3), content.substring(0, 0+3)/*The*/);
-            data.put(rop.queueRead(20, 6), content.substring(20,20+6)/*jumped*/);
-            data.put(rop.queueRead(10, 5), content.substring(10,10+5)/*brown*/);
-            rop.operate(oid, 0);
+            data.put(rop.queueRead(20, 6), content.substring(20, 20 + 6)/*jumped*/);
+            data.put(rop.queueRead(10, 5), content.substring(10, 10 + 5)/*brown*/);
+            rop.operate(oid, Rados.OPERATION_NOFLAG);
             for ( Map.Entry<ReadResult,String> e : data.entrySet() ) {
-            	byte[] buf = new byte[(int)e.getKey().getBytesRead()];
-            	e.getKey().getBuffer().get(buf);
+                ReadResult readResult = e.getKey();
+                assertEquals(0, readResult.getRVal());
+                // make sure, no exception is thrown if result is ok
+                readResult.raiseExceptionOnError("just a test");
+
+            	byte[] buf = new byte[(int) readResult.getBytesRead()];
+            	readResult.getBuffer().get(buf);
             	assertEquals(e.getValue(), new String(buf,java.nio.charset.StandardCharsets.UTF_8));
             }
+        }
+        catch (RadosException e) {
+            fail(e.getMessage() + ": " + e.getReturnValue());
+        }
+        catch ( Exception e ) {
+            fail(e.getMessage());
+        } finally {
+            cleanupObject(rados, ioctx, oid);
+        }
+    }
+
+    @Test
+    public void testReadOperationWithNonExistingObject() {
+        try (ReadOp rop = ioctx.readOpCreate()) {
+            ReadResult readResult = rop.queueRead(0, 100);
+            rop.operate("non_existing_object", Rados.OPERATION_NOFLAG);
+
+            assertEquals(ErrorCode.ENOENT.getErrorCode(), readResult.getRVal());
+            readResult.raiseExceptionOnError("just a test");
+            fail("read result should have thrown an exception");
+        }
+        catch(RadosNotFoundException e) {
+            // this is expected
         }
         catch (RadosException e) {
             fail(e.getMessage() + ": " + e.getReturnValue());
@@ -341,6 +371,36 @@ public final class TestRados {
         }
     }
 
+
+    @Test
+    public void testReadOpFull() throws Exception {
+        final String oid = "testReadOpFull";
+        final String content = "The quick brown fox jumped over the lazy dog.";
+        ioctx.write(oid, content);
+
+        try (ReadOp rop = ioctx.readOpCreate()) {
+            ReadResult readResult = rop.queueRead(0, content.length() + 10);
+            rop.operate(oid, Rados.OPERATION_NOFLAG);
+
+            assertEquals(0, readResult.getRVal());
+            // make sure, no exception is thrown if result is ok
+            readResult.raiseExceptionOnError("just a test");
+            assertEquals(content.length(), readResult.getBytesRead());
+            byte[] buffer = new byte[content.length()];
+            readResult.getBuffer().get(buffer);
+            assertEquals(content, new String(buffer,java.nio.charset.StandardCharsets.UTF_8));
+        }
+        catch (RadosException e) {
+            fail(e.getMessage() + ": " + e.getReturnValue());
+        }
+        catch ( Exception e ) {
+            fail(e.getMessage());
+        } finally {
+            cleanupObject(rados, ioctx, oid);
+        }
+    }
+
+    @Test
     public void testListPartial() {
         /**
          * The object we will write to with the data

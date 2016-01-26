@@ -64,7 +64,7 @@ public class RadosBase {
         return result;
     }
 
-    private void throwException(int errorCode, String msg) throws RadosException {
+    public static void throwException(int errorCode, String msg) throws RadosException {
         String exceptionMessage;
         ErrorCode errorCodeEnum = ErrorCode.getEnum(errorCode);
         if (errorCodeEnum != null) {

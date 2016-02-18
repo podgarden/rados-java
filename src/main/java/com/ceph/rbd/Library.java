@@ -23,6 +23,8 @@ import com.ceph.rbd.jna.Rbd;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 final class Library {
     final static Rbd rbd;
 
@@ -47,11 +49,7 @@ final class Library {
         assert (len != -1): "C-Strings must be \\0 terminated.";
 
         final byte[] data = ptr.getByteArray(0, (int)len);
-        try {
-            return new String(data, "utf-8");
-        } catch (java.io.UnsupportedEncodingException e) {
-            throw new RuntimeException("Rbd problem: UTF-8 decoding error.", e);
-        }
+        return new String(data, UTF_8);
     }
 
     /**

@@ -223,12 +223,7 @@ public class Rbd {
      * @return RbdImage
      */
     public RbdImage open(String name) throws RbdException {
-        Pointer p = new Memory(Pointer.SIZE);
-        int r = rbd.rbd_open(this.io, name, p, null);
-        if (r < 0) {
-            throw new RbdException("Failed to open image " + name, r);
-        }
-        return new RbdImage(p, name);
+        return this.open(name, null);
     }
 
     /**
@@ -259,12 +254,7 @@ public class Rbd {
      * @return RbdImage
      */
     public RbdImage openReadOnly(String name) throws RbdException {
-        Pointer p = new Memory(Pointer.SIZE);
-        int r = rbd.rbd_open_read_only(this.io, name, p, null);
-        if (r < 0) {
-            throw new RbdException("Failed to open image " + name, r);
-        }
-        return new RbdImage(p, name);
+        return this.openReadOnly(name, null);
     }
 
     /**

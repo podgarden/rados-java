@@ -93,11 +93,7 @@ public class RbdImage {
             throw new RbdException("Failed to get the RBD format", r);
         }
 
-        if (old.getValue() == 1) {
-            return true;
-        }
-
-        return false;
+        return old.getValue() == 1;
     }
 
     /**
@@ -171,11 +167,7 @@ public class RbdImage {
             throw new RbdException("Failed to find out if snapshot " + snapName +  " is protected", r);
         }
 
-        if (isProtected.getValue() == 1) {
-            return true;
-        }
-
-        return false;
+        return isProtected.getValue() == 1;
     }
 
     /**

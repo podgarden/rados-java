@@ -1,8 +1,8 @@
 /*
- * RADOS Java - Java bindings for librados
+ * RADOS Striper Java - Java bindings for librados
  *
  * Copyright (C) 2013 Wido den Hollander <wido@42on.com>
- *
+ *               2016 Arno Broekhof <arnobroekhof@gmail.com>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -33,9 +33,9 @@ public interface RadosStriper extends Library {
 
     int rados_set_object_layout_stripe_unit(Pointer striper, int stripe_unit);
 
-    int rados_striper_set_object_layout_stripe_count(Pointer striper, int stripe_count);
+    int rados_set_object_layout_stripe_count(Pointer striper, int stripe_count);
 
-    int rados_striper_set_object_layout_object_size(Pointer striper, int object_size);
+    int rados_set_object_layout_object_size(Pointer striper, int object_size);
 
     int rados_striper_write(Pointer striper, String oid, byte[] buf, int len, long off);
 

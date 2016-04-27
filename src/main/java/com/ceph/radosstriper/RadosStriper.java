@@ -1,29 +1,50 @@
+/*
+ * RADOS Striper Java - Java bindings for librados
+ *
+ * Copyright (C) 2013 Wido den Hollander <wido@42on.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
+ */
 package com.ceph.radosstriper;
 
-import com.ceph.rados.RadosBase;
 
-/**
- * Created by arno.broekhof on 4/25/16.
- */
-public class RadosStriper extends RadosBase {
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.Rados;
+import com.ceph.rados.exceptions.RadosException;
+import com.sun.jna.Memory;
+import com.sun.jna.Pointer;
 
-    private static String ENV_BUFFER_SIZE = System.getenv("RADOS_JAVA_BUFFER_SIZE");
-    private static String ENV_STRIPE_UNIT = System.getenv("RADOS_JAVA_STRIP_UNIT");
-    private static String ENV_STRIPE_COUNT = System.getenv("RADOS_JAVA_STRIPE_COUNT");
-    private static String ENV_OBJECT_SIZE = System.getenv("RADOS_JAVA_OBJECT_SIZE");
+import java.util.concurrent.Callable;
 
+import static com.ceph.radosstriper.Library.rados;
 
-    // BUFFER_SIZE defaults to 8M
-    private static final String BUFFER_SIZE = ENV_BUFFER_SIZE == null ? "8388608" : ENV_BUFFER_SIZE;
+public class RadosStriper extends Rados {
+    private static final int EXT_ATTR_MAX_LEN = 4096;
 
-    // STRIPE_UNIT defaults to 512k
-    private static final String STRIPE_UNIT = ENV_STRIPE_UNIT == null ? "524288" : ENV_STRIPE_UNIT;
+    private Pointer striperPtr;
 
-    // OBJECT_SIZE defaults to 4M
-    private static final String OBJECT_SIZE = ENV_OBJECT_SIZE == null ? "4194304" : ENV_OBJECT_SIZE;
+    public IoCTXStriper ioCtxCreateStriper(final IoCTX ioCTX) throws RadosException {
+        final Pointer p = new Memory(Pointer.SIZE);
+        handleReturnCode(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return rados.rados_striper_create(ioCTX.getPointer(), p);
+            }
+        }, "Failed to create the IoCTX Striper");
+        return new IoCTXStriper(p);
+    }
 
-    // STRIPE_COUNT defaults to 3
-    private static final String STRIPE_COUNT = ENV_STRIPE_COUNT == null ? "3" : ENV_STRIPE_COUNT;
-
-
+    public void destroy(IoCTXStriper ioCTXStriper) {
+        rados.rados_striper_destroy(ioCTXStriper.getPointer());
+    }
 }

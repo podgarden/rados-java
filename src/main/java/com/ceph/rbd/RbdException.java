@@ -18,7 +18,9 @@
 
 package com.ceph.rbd;
 
-public class RbdException extends Exception {
+import java.io.IOException;
+
+public class RbdException extends IOException {
 
     protected int returnValue;
 

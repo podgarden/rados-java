@@ -21,6 +21,8 @@ package com.ceph.rados;
 
 import static com.ceph.rados.Library.rados;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +39,7 @@ import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
 import com.sun.jna.ptr.PointerByReference;
 
-public class IoCTX extends RadosBase {
+public class IoCTX extends RadosBase implements Closeable {
 
     private static final int    EXT_ATTR_MAX_LEN = 4096;
 
@@ -324,9 +326,7 @@ public class IoCTX extends RadosBase {
         handleReturnCode(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-            	synchronized (IoCTX.class) {	// TODO
-            		return rados.rados_aio_write_full(getPointer(), oid, completion.getPointer(), buf, len);
-            	}
+            	return rados.rados_aio_write_full(getPointer(), oid, completion.getPointer(), buf, len);
             }
         }, "Failed to AIO write %s bytes to %s", len, oid);
     }
@@ -782,4 +782,9 @@ public class IoCTX extends RadosBase {
 
         return attr_map;
     }
+
+	@Override
+	public void close() throws IOException {
+        rados.rados_ioctx_destroy(getPointer());
+	}
 }

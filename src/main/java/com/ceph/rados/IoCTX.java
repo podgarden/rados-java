@@ -267,6 +267,103 @@ public class IoCTX extends RadosBase {
     }
 
     /**
+     * Asynchronously write to an object
+     *
+     * @param oid
+     *          The object to write to
+     * @param completion
+     *          The completion instructions
+     * @param buf
+     *          The content to write
+     * @param offset
+     *          The offset when writing
+     * @throws RadosException
+     */
+    public void aioWrite(final String oid, final Completion completion, final byte[] buf, final long offset) throws RadosException, IllegalArgumentException {
+        if (offset < 0) {
+            throw new IllegalArgumentException("Offset shouldn't be a negative value");
+        }
+        handleReturnCode(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                return rados.rados_aio_write(getPointer(), oid, completion.getPointer(), buf, buf.length, offset);
+            }
+        }, "Failed AIO writing %s bytes with offset %s to %s", buf.length, offset, oid);
+    }
+
+    /**
+     * Asynchronously write to an object without an offset
+     *
+     * @param oid
+     *          The object to write to
+     * @param completion
+     *          The completion instructions
+     * @param buf
+     *          The content to write
+     * @throws RadosException
+     */
+    public void aioWrite(String oid, final Completion completion, byte[] buf) throws RadosException {
+        this.aioWriteFull(oid, completion, buf, buf.length);
+    }
+
+    /**
+     * Asynchronously write an entire object
+     * The object is filled with the provided data. If the object exists, it is atomically truncated and then written.
+     *
+     * @param oid
+     *          The object to write to
+     * @param completion
+     *          The completion instructions
+     * @param buf
+     *          The content to write
+     * @param len
+     *          The length of the data to write
+     * @throws RadosException
+     */
+    public void aioWriteFull(final String oid, final Completion completion, final byte[] buf, final int len) throws RadosException {
+        handleReturnCode(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+            	synchronized (IoCTX.class) {	// TODO
+            		return rados.rados_aio_write_full(getPointer(), oid, completion.getPointer(), buf, len);
+            	}
+            }
+        }, "Failed to AIO write %s bytes to %s", len, oid);
+    }
+
+    /**
+     * Asynchronously write to an object without an offset
+     *
+     * @param oid
+     *          The object to write to
+     * @param completion
+     *          The completion instructions
+     * @param buf
+     *          The content to write
+     * @param offset
+     *          The offset when writing
+     * @throws RadosException
+     */
+    public void aioWrite(String oid, final Completion completion, String buf, long offset) throws RadosException {
+        this.aioWrite(oid, completion, buf.getBytes(), offset);
+    }
+
+    /**
+     * Asynchronously write to an object without an offset
+     *
+     * @param oid
+     *          The object to write to
+     * @param completion
+     *          The completion instructions
+     * @param buf
+     *          The content to write
+     * @throws RadosException
+     */
+    public void aioWrite(String oid, final Completion completion, String buf) throws RadosException {
+        this.aioWrite(oid, completion, buf.getBytes());
+    }
+    
+    /**
      * Remove an object
      *
      * @param oid

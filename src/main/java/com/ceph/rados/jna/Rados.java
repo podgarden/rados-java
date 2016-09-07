@@ -84,6 +84,7 @@ public interface Rados extends Library {
     // Asynchronous I/O
     int rados_aio_create_completion(Pointer callbackContext, Callback callbackComplete, Callback callbackSafe, PointerByReference completion);
     void rados_aio_release(Pointer completion);
+    int rados_aio_flush(Pointer completion);
     int rados_aio_write(Pointer ioctx, String oid, Pointer completion, byte[] buffer, int length, long offset);
     int rados_aio_write_full(Pointer ioctx, String oid, Pointer completion, byte[] buffer, int length);
     int rados_aio_wait_for_complete(Pointer completion);

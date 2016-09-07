@@ -364,6 +364,21 @@ public class IoCTX extends RadosBase implements Closeable {
     }
     
     /**
+     * Block until all pending writes in an io context are safe.
+     * <p>
+     * This is not equivalent to calling rados_aio_wait_for_safe() on all write completions, since this waits for the associated callbacks to complete as well.
+     * @throws RadosException
+     */
+    public void aioFlush() throws RadosException {
+        handleReturnCode(new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+            	return rados.rados_aio_flush(getPointer());
+            }
+        }, "Failed to AIO flush");
+    }
+
+    /**
      * Remove an object
      *
      * @param oid

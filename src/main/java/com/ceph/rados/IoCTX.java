@@ -69,6 +69,17 @@ public class IoCTX extends RadosBase implements Closeable {
     }
 
     /**
+     * Set the namespace for objects within an IO context.
+     * <p>
+     * The namespace specification further refines a pool into different domains. The mapping of objects to PGs is also based on this value.
+     * 
+     * @param namespace The name to use as the namespace, or NULL use the default namespace.
+     */
+    public void setNamespace(String namespace) {
+    	rados.rados_ioctx_set_namespace(getPointer(), namespace);
+    }
+    
+    /**
      * Get the pool ID of this context
      *
      * @return long

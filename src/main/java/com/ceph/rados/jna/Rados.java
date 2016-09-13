@@ -89,35 +89,6 @@ public interface Rados extends Library {
     int rados_aio_write(Pointer ioctx, String oid, Pointer completion, byte[] buffer, int length, long offset);
     int rados_aio_write_full(Pointer ioctx, String oid, Pointer completion, byte[] buffer, int length);
     int rados_aio_wait_for_complete(Pointer completion);
-
-    /* TODO
-000000000006eee0 T rados_aio_append
-000000000006a680 T rados_aio_cancel
-000000000006f5c0 T *rados_aio_create_completion
-000000000006a420 T rados_aio_flush
-000000000006a360 T rados_aio_flush_async
-0000000000069eb0 T rados_aio_get_return_value
-0000000000069750 T rados_aio_is_complete
-0000000000069cf0 T rados_aio_is_complete_and_cb
-0000000000069820 T rados_aio_is_safe
-0000000000069dd0 T rados_aio_is_safe_and_cb
-000000000006f300 T rados_aio_notify
-000000000006a050 T rados_aio_read
-000000000006bd90 T rados_aio_read_op_operate
-000000000006d570 T *rados_aio_release
-000000000006a200 T rados_aio_remove
-000000000006a4e0 T rados_aio_stat
-000000000006ad90 T rados_aio_unwatch
-0000000000069350 T rados_aio_wait_for_complete
-00000000000698f0 T rados_aio_wait_for_complete_and_cb
-0000000000069550 T rados_aio_wait_for_safe
-0000000000069af0 T rados_aio_wait_for_safe_and_cb
-000000000006a9f0 T rados_aio_watch
-000000000006b000 T rados_aio_watch_flush
-000000000006ecb0 T *rados_aio_write
-000000000006eaa0 T *rados_aio_write_full
-000000000006b740 T rados_aio_write_op_operate
-     */
     
     // read, write, remove, iterate extended attributes
     int rados_getxattr(Pointer ioctx, String oid, String xattrName, byte[] buf, long len);

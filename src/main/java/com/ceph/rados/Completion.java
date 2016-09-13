@@ -4,6 +4,8 @@ import static com.ceph.rados.Library.rados;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import com.ceph.rados.exceptions.RadosException;
@@ -12,7 +14,43 @@ import com.sun.jna.Pointer;
 import com.sun.jna.ptr.PointerByReference;
 
 public class Completion extends RadosBase implements Closeable {
+	// Static members
+	private static Map<Integer,Completion> completionMap = new HashMap<>();
+	private static int nextCompletionId = 1;
+	
+	// Callback support
+	private static Callback completeCallback = new Callback() {
+		@SuppressWarnings("unused")
+		public void callback(Pointer completionPointer, Pointer callbackContext) throws RadosException {
+			final int completionId = callbackContext.getInt(0);
+			Completion completion;
+			synchronized (completionMap) {
+				completion = completionMap.get(completionId);
+			}
+			if (completion == null)
+				throw new RadosException("Failed to executed onComplete() due to unknown completionId: " + completionId);
+			else
+				completion.onComplete();
+		}
+	};
+	private static Callback safeCallback = new Callback() {
+		@SuppressWarnings("unused")
+		public void callback(Pointer completionPointer, Pointer callbackContext) throws RadosException {
+			final int completionId = callbackContext.getInt(0);
+			Completion completion;
+			synchronized (completionMap) {
+				completion = completionMap.get(completionId);
+			}
+			if (completion == null)
+				throw new RadosException("Failed to executed onSafe() due to unknown completionId: " + completionId);
+			else
+				completion.onSafe();
+		}
+	};
+
+	// Instance members
 	private Pointer pointer;
+	private int completionId;
 	
     /**
      * Constructs a completion to use with asynchronous operations.
@@ -23,24 +61,49 @@ public class Completion extends RadosBase implements Closeable {
      * <p>
      * NOTE: Read operations only get a complete callback.
      * 
-     * @param callbackContext application-defined data passed to the callback functions
-     * @param callbackComplete the function to be called when the operation is in memory on all replicas
-     * @param callbackSafe the function to be called when the operation is on stable storage on all replicas
-     * @param pointer where to store the completion
-     * @return 0
+	 * @param notifyOnComplete If true, onComplete() is called when the operation is in memory on all replicas
+	 * @param notifyOnSafe If true, onSafe() is called when the operation is on stable storage on all replicas
      * @throws RadosException 
      */
-	public Completion(final Pointer callbackContext, final Callback callbackComplete, final Callback callbackSafe) throws RadosException {
+	public Completion(final boolean notifyOnComplete, final boolean notifyOnSafe) throws RadosException {
 		super();
         final PointerByReference pointerByReference = new PointerByReference();
-        handleReturnCode(new Callable<Integer>() {
-	            @Override
-	            public Integer call() throws Exception {
-	                return rados.rados_aio_create_completion(callbackContext, callbackComplete, callbackSafe, pointerByReference);
-	            }
-	        },
-	        "Failed to create completion"
-	    );
+		if (notifyOnComplete || notifyOnSafe) {
+			// Record this object in the global completion map so that is can be accessed from the callback handlers. 
+			synchronized (completionMap) {
+				completionId = nextCompletionId++;
+				if (completionId <= 0) {
+					completionId = 1;
+					nextCompletionId = 2;
+				}
+				completionMap.put(completionId, this);
+			}
+			
+			// Create the completion object.
+			handleReturnCode(new Callable<Integer>() {
+				@Override
+				public Integer call() throws Exception {
+					return rados.rados_aio_create_completion(
+							Pointer.createConstant(completionId), 
+							notifyOnComplete?completeCallback:null, 
+							notifyOnSafe?safeCallback:null,
+							pointerByReference
+					);
+				}
+			},
+			"Failed to create completion"
+		);
+			
+		} else {
+			handleReturnCode(new Callable<Integer>() {
+					@Override
+					public Integer call() throws Exception {
+						return rados.rados_aio_create_completion(null, null, null, pointerByReference);
+					}
+				},
+				"Failed to create completion"
+			);
+		}
         pointer = pointerByReference.getValue();
 	}
 	
@@ -58,6 +121,20 @@ public class Completion extends RadosBase implements Closeable {
 	        "Failed to wait for AIO completion"
 	    );		
 	}
+
+	/**
+	 * Override this function to implement callback handling.  If notifyOnSafe is true, this function is called when
+	 * the operation is in memory on all replicas. 
+	 */
+	public void onComplete() {
+	}
+	
+	/**
+	 * Override this function to implement callback handling.  If notifyOnComplete is true, this function is called when
+	 * the operation is on stable storage on all replicas. 
+	 */
+	public void onSafe() {
+	}
 	
     /**
      * Release a completion
@@ -67,23 +144,15 @@ public class Completion extends RadosBase implements Closeable {
 	@Override
 	public void close() throws IOException {
 		rados.rados_aio_release(getPointer());
+		if (completionId > 0) {
+			synchronized (completionMap) {
+				completionMap.remove(completionId);
+			}
+			completionId = 0;
+		}
 	}
 
 	public Pointer getPointer() {
 		return pointer;
 	}
-	
-	/* TODO
-	private static class CallbackHandler implements Callback {
-		CompletionCallback completionCallback;
-		
-		public void callback(Pointer completion, Pointer callbackContext) {
-			completionCallback.callback(completion, callbackContext);
-		}
-	}
-
-	public static interface CompletionCallback {
-		public void callback(Completion completion, Pointer callbackContext);
-	}
-	*/
 }

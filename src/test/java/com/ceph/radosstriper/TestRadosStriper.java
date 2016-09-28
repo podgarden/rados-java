@@ -1,6 +1,7 @@
 package com.ceph.radosstriper;
 
 
+import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
@@ -46,8 +47,9 @@ public class TestRadosStriper {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        rados.shutDown();
         rados.destroy(ioctx);
+        rados.shutDown();
+
 
     }
 
@@ -113,14 +115,14 @@ public class TestRadosStriper {
      * This test creates an object, appends some data and removes it afterwards
      */
     @Test
-    public void testIoCtxWriteAndAppendBytes() throws Exception {
+    public void testIoCtxStripedWriteAndAppendBytes() throws Exception {
         /**
          * The object we will write to with the data
          */
-        String oid = "rados-java";
+        String oid = "rados-java-striped";
 
         try {
-            byte[] buffer = new byte[20];
+            byte[] buffer = new byte[8192];
             // use a fix seed so that we always get the same data
             new Random(42).nextBytes(buffer);
 

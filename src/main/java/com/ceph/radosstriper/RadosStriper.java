@@ -31,6 +31,10 @@ import static com.ceph.radosstriper.Library.rados;
 public class RadosStriper extends Rados {
     private static final int EXT_ATTR_MAX_LEN = 4096;
 
+    public RadosStriper(String id) {
+        super(id);
+    }
+
     private Pointer striperPtr;
 
     public IoCTXStriper ioCtxCreateStriper(final IoCTX ioCTX) throws RadosException {

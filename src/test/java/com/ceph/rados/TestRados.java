@@ -525,6 +525,35 @@ public final class TestRados {
         }
     }
 
+    /**
+     * This test sets an extended attribute on an object which is thereby automatically created
+     * with a size of 0 bytes.  Afterwards the read back attributes are verified.
+     */
+    @Test
+    public void testIoCtxSetListExtentedAttributes() throws Exception {
+        String oid = "rados-java-w/ext.attributes";      // The object we will write to with the data.
+        Map<String, String> attr_map = new HashMap<>();  // Map of attributes we will set for the object.
+        attr_map.put("testAttribute1", "testValue1");
+        attr_map.put("testAttribute2", "testValue2");
+        attr_map.put("testAttribute3", "testValue3");
+
+        try {
+            // create object (if it doesn't exist) and set extended attributes
+            for(Map.Entry<String, String> attr : attr_map.entrySet()) {
+                ioctx.setExtentedAttribute(oid, attr.getKey(), attr.getValue());
+            }
+            // try to read back the attributes from the object
+            Map<String, String> read_back_attr_map = ioctx.getExtentedAttributes(oid);
+
+            assertEquals("The extended attributes data that was read is different from what was set: ", attr_map, read_back_attr_map);
+        } catch (RadosException e) {
+            fail(e.getMessage() + ": " + e.getReturnValue());
+        }
+        finally {
+            cleanupObject(rados, ioctx, oid);
+        }
+    }
+
     static class RadosFinalizeTest extends Rados {
 
         public RadosFinalizeTest(String id) {

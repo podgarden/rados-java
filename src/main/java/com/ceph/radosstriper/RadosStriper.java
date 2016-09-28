@@ -21,12 +21,11 @@ package com.ceph.radosstriper;
 import com.ceph.rados.IoCTX;
 import com.ceph.rados.Rados;
 import com.ceph.rados.exceptions.RadosException;
+import static com.ceph.radosstriper.Library.rados;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 
 import java.util.concurrent.Callable;
-
-import static com.ceph.radosstriper.Library.rados;
 
 public class RadosStriper extends Rados {
     private static final int EXT_ATTR_MAX_LEN = 4096;
@@ -34,8 +33,6 @@ public class RadosStriper extends Rados {
     public RadosStriper(String id) {
         super(id);
     }
-
-    private Pointer striperPtr;
 
     public IoCTXStriper ioCtxCreateStriper(final IoCTX ioCTX) throws RadosException {
         final Pointer p = new Memory(Pointer.SIZE);

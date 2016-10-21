@@ -58,7 +58,7 @@ public class Completion extends RadosBase implements Closeable {
 
 	// Instance members
 	private Pointer pointer;
-	private int completionId;
+	private int id;
 	
     /**
      * Constructs a completion to use with asynchronous operations.
@@ -79,16 +79,16 @@ public class Completion extends RadosBase implements Closeable {
 
         // Generate an ID for this completion.
         synchronized (completionMap) {
-        	completionId = nextCompletionId++;
-        	if (completionId <= 0) {
-        		completionId = 1;
+        	id = nextCompletionId++;
+        	if (id <= 0) {
+        		id = 1;
         		nextCompletionId = 2;
         	}
 
         	// If callbacks will be registered, then also record this object in the global completion map 
         	// so that it can be accessed from the callback handlers. 
     		if (notifyOnComplete || notifyOnSafe)
-    			completionMap.put(completionId, this);
+    			completionMap.put(id, this);
         }
         
         // Create the completion object.
@@ -97,7 +97,7 @@ public class Completion extends RadosBase implements Closeable {
 					@Override
 					public Integer call() throws Exception {
 						return rados.rados_aio_create_completion(
-								Pointer.createConstant((long)completionId), 
+								Pointer.createConstant((long)id), 
 								notifyOnComplete?completeCallback:null, 
 								notifyOnSafe?safeCallback:null,
 								pointerByReference
@@ -157,12 +157,19 @@ public class Completion extends RadosBase implements Closeable {
 	@Override
 	public void close() throws IOException {
 		rados.rados_aio_release(getPointer());
-		if (completionId > 0) {
+		if (id > 0) {
 			synchronized (completionMap) {
-				completionMap.remove(completionId);
+				completionMap.remove(id);
 			}
-			completionId = 0;
+			id = 0;
 		}
+	}
+
+	/**
+	 * @return A unique ID identifying the completion.
+	 */
+	public int getId() {
+		return id;
 	}
 
 	/**
@@ -187,7 +194,7 @@ public class Completion extends RadosBase implements Closeable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + completionId;
+		result = prime * result + id;
 		return result;
 	}
 
@@ -199,6 +206,6 @@ public class Completion extends RadosBase implements Closeable {
 			return false;
 		if (!(that instanceof Completion))
 			return false;
-		return (completionId == ((Completion)that).completionId);
+		return (id == ((Completion)that).id);
 	}
 }

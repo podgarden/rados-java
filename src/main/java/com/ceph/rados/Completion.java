@@ -18,6 +18,10 @@ public class Completion extends RadosBase implements Closeable {
 	private static Map<Integer,Completion> completionMap = new HashMap<>();
 	private static int nextCompletionId = 1;
 	
+	// Instance members
+	private boolean safe;
+	private boolean complete;
+	
 	// Callback support
 	private static Callback completeCallback = new Callback() {
 		@SuppressWarnings("unused")
@@ -29,8 +33,10 @@ public class Completion extends RadosBase implements Closeable {
 			}
 			
 			// If the completion has not been closed yet, call the handler.
-			if (completion != null)
+			if (completion != null) {
+				completion.complete = true;
 				completion.onComplete();
+			}
 		}
 	};
 	private static Callback safeCallback = new Callback() {
@@ -43,8 +49,10 @@ public class Completion extends RadosBase implements Closeable {
 			}
 
 			// If the completion has not been closed yet, call the handler.
-			if (completion != null)
+			if (completion != null) {
+				completion.safe = true;
 				completion.onSafe();
+			}
 		}
 	};
 
@@ -68,31 +76,36 @@ public class Completion extends RadosBase implements Closeable {
 	public Completion(final boolean notifyOnComplete, final boolean notifyOnSafe) throws RadosException {
 		super();
         final PointerByReference pointerByReference = new PointerByReference();
+
+        // Generate an ID for this completion.
+        synchronized (completionMap) {
+        	completionId = nextCompletionId++;
+        	if (completionId <= 0) {
+        		completionId = 1;
+        		nextCompletionId = 2;
+        	}
+
+        	// If callbacks will be registered, then also record this object in the global completion map 
+        	// so that it can be accessed from the callback handlers. 
+    		if (notifyOnComplete || notifyOnSafe)
+    			completionMap.put(completionId, this);
+        }
+        
+        // Create the completion object.
 		if (notifyOnComplete || notifyOnSafe) {
-			// Record this object in the global completion map so that it can be accessed from the callback handlers. 
-			synchronized (completionMap) {
-				completionId = nextCompletionId++;
-				if (completionId <= 0) {
-					completionId = 1;
-					nextCompletionId = 2;
-				}
-				completionMap.put(completionId, this);
-			}
-			
-			// Create the completion object.
 			handleReturnCode(new Callable<Integer>() {
-				@Override
-				public Integer call() throws Exception {
-					return rados.rados_aio_create_completion(
-							Pointer.createConstant(completionId), 
-							notifyOnComplete?completeCallback:null, 
-							notifyOnSafe?safeCallback:null,
-							pointerByReference
-					);
-				}
-			},
-			"Failed to create completion"
-		);
+					@Override
+					public Integer call() throws Exception {
+						return rados.rados_aio_create_completion(
+								Pointer.createConstant(completionId), 
+								notifyOnComplete?completeCallback:null, 
+								notifyOnSafe?safeCallback:null,
+								pointerByReference
+						);
+					}
+				},
+				"Failed to create completion with callbacks"
+			);
 			
 		} else {
 			handleReturnCode(new Callable<Integer>() {
@@ -152,7 +165,40 @@ public class Completion extends RadosBase implements Closeable {
 		}
 	}
 
+	/**
+	 * @return True if the safe callback is enabled has occurred, else false.
+	 */
+	public boolean isSafe() {
+		return safe;
+	}
+
+	/**
+	 * @return True if the complete callback is enabled has occurred, else false.
+	 */
+	public boolean isComplete() {
+		return complete;
+	}
+
 	public Pointer getPointer() {
 		return pointer;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + completionId;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object that) {
+		if (this == that)
+			return true;
+		if (that == null)
+			return false;
+		if (!(that instanceof Completion))
+			return false;
+		return (completionId == ((Completion)that).completionId);
 	}
 }

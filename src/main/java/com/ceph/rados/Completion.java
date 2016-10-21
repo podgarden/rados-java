@@ -26,7 +26,7 @@ public class Completion extends RadosBase implements Closeable {
 	private static Callback completeCallback = new Callback() {
 		@SuppressWarnings("unused")
 		public void callback(Pointer completionPointer, Pointer callbackContext) throws RadosException {
-			final int completionId = callbackContext.getInt(0);
+			final int completionId = (int)Pointer.nativeValue(callbackContext);
 			Completion completion;
 			synchronized (completionMap) {
 				completion = completionMap.get(completionId);
@@ -42,7 +42,7 @@ public class Completion extends RadosBase implements Closeable {
 	private static Callback safeCallback = new Callback() {
 		@SuppressWarnings("unused")
 		public void callback(Pointer completionPointer, Pointer callbackContext) throws RadosException {
-			final int completionId = callbackContext.getInt(0);
+			final int completionId = (int)Pointer.nativeValue(callbackContext);
 			Completion completion;
 			synchronized (completionMap) {
 				completion = completionMap.get(completionId);
@@ -97,7 +97,7 @@ public class Completion extends RadosBase implements Closeable {
 					@Override
 					public Integer call() throws Exception {
 						return rados.rados_aio_create_completion(
-								Pointer.createConstant(completionId), 
+								Pointer.createConstant((long)completionId), 
 								notifyOnComplete?completeCallback:null, 
 								notifyOnSafe?safeCallback:null,
 								pointerByReference

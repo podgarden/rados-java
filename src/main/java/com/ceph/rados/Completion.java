@@ -27,9 +27,9 @@ public class Completion extends RadosBase implements Closeable {
 			synchronized (completionMap) {
 				completion = completionMap.get(completionId);
 			}
-			if (completion == null)
-				throw new RadosException("Failed to executed onComplete() due to unknown completionId: " + completionId);
-			else
+			
+			// If the completion has not been closed yet, call the handler.
+			if (completion != null)
 				completion.onComplete();
 		}
 	};
@@ -41,9 +41,9 @@ public class Completion extends RadosBase implements Closeable {
 			synchronized (completionMap) {
 				completion = completionMap.get(completionId);
 			}
-			if (completion == null)
-				throw new RadosException("Failed to executed onSafe() due to unknown completionId: " + completionId);
-			else
+
+			// If the completion has not been closed yet, call the handler.
+			if (completion != null)
 				completion.onSafe();
 		}
 	};
@@ -69,7 +69,7 @@ public class Completion extends RadosBase implements Closeable {
 		super();
         final PointerByReference pointerByReference = new PointerByReference();
 		if (notifyOnComplete || notifyOnSafe) {
-			// Record this object in the global completion map so that is can be accessed from the callback handlers. 
+			// Record this object in the global completion map so that it can be accessed from the callback handlers. 
 			synchronized (completionMap) {
 				completionId = nextCompletionId++;
 				if (completionId <= 0) {

@@ -76,7 +76,7 @@ public class IoCTX extends RadosBase implements Closeable {
      * @param namespace The name to use as the namespace, or NULL use the default namespace.
      */
     public void setNamespace(String namespace) {
-    	rados.rados_ioctx_set_namespace(getPointer(), namespace);
+        rados.rados_ioctx_set_namespace(getPointer(), namespace);
     }
     
     /**
@@ -809,8 +809,8 @@ public class IoCTX extends RadosBase implements Closeable {
         return attr_map;
     }
 
-	@Override
-	public void close() throws IOException {
+    @Override
+    public void close() throws IOException {
         rados.rados_ioctx_destroy(getPointer());
-	}
+    }
 }

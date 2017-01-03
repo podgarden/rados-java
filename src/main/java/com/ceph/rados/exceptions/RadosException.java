@@ -18,7 +18,9 @@
 
 package com.ceph.rados.exceptions;
 
-public class RadosException extends Exception {
+import java.io.IOException;
+
+public class RadosException extends IOException {
 
     protected int returnValue;
 

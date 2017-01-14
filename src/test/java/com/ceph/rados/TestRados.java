@@ -335,9 +335,9 @@ public final class TestRados {
                 // make sure, no exception is thrown if result is ok
                 readResult.raiseExceptionOnError("just a test");
 
-            	byte[] buf = new byte[(int) readResult.getBytesRead()];
-            	readResult.getBuffer().get(buf);
-            	assertEquals(e.getValue(), new String(buf,java.nio.charset.StandardCharsets.UTF_8));
+                byte[] buf = new byte[(int) readResult.getBytesRead()];
+                readResult.getBuffer().get(buf);
+                assertEquals(e.getValue(), new String(buf,java.nio.charset.StandardCharsets.UTF_8));
             }
         }
         catch (RadosException e) {
@@ -492,24 +492,24 @@ public final class TestRados {
      * removed from the object.
      */
     @Test
-    public void testIoCtxSetGetRemoveExtentedAttribute() throws Exception {
+    public void testIoCtxSetGetRemoveExtendedAttribute() throws Exception {
         String oid = "rados-java-w/ext.attributes";      // The object we will write to with the data.
         String xattrName = "testAttribute";              // Name of the object's extended attribute we will set.
         String xattrData = "testValue";                  // The data/value of the extended attribute.
         try {
             // create object (if it doesn't exist) and set extended attribute
-            ioctx.setExtentedAttribute(oid, xattrName, xattrData);
+            ioctx.setExtendedAttribute(oid, xattrName, xattrData);
 
             // try to read the attribute's value
-            String readAttributeValue = ioctx.getExtentedAttribute(oid, xattrName);
+            String readAttributeValue = ioctx.getExtendedAttribute(oid, xattrName);
             assertEquals("The extended attribute data that was read is different from what was set: ", xattrData, readAttributeValue);
 
             // remove the extended attribute from the object
-            ioctx.removeExtentedAttribute(oid, xattrName);
+            ioctx.removeExtendedAttribute(oid, xattrName);
 
             // verify that the attribute doesn't exist anymore
             try {
-                readAttributeValue = ioctx.getExtentedAttribute(oid, xattrName);
+                readAttributeValue = ioctx.getExtendedAttribute(oid, xattrName);
                 fail("Ext. attribute '" + xattrName + "' should have been removed from object '" + oid
                         + "' so RadosException with error code " + ErrorCode.ENODATA + " is expected.");
             }
@@ -530,7 +530,7 @@ public final class TestRados {
      * with a size of 0 bytes.  Afterwards the read back attributes are verified.
      */
     @Test
-    public void testIoCtxSetListExtentedAttributes() throws Exception {
+    public void testIoCtxSetListExtendedAttributes() throws Exception {
         String oid = "rados-java-w/ext.attributes";      // The object we will write to with the data.
         Map<String, String> attr_map = new HashMap<>();  // Map of attributes we will set for the object.
         attr_map.put("testAttribute1", "testValue1");
@@ -540,10 +540,10 @@ public final class TestRados {
         try {
             // create object (if it doesn't exist) and set extended attributes
             for(Map.Entry<String, String> attr : attr_map.entrySet()) {
-                ioctx.setExtentedAttribute(oid, attr.getKey(), attr.getValue());
+                ioctx.setExtendedAttribute(oid, attr.getKey(), attr.getValue());
             }
             // try to read back the attributes from the object
-            Map<String, String> read_back_attr_map = ioctx.getExtentedAttributes(oid);
+            Map<String, String> read_back_attr_map = ioctx.getExtendedAttributes(oid);
 
             assertEquals("The extended attributes data that was read is different from what was set: ", attr_map, read_back_attr_map);
         } catch (RadosException e) {

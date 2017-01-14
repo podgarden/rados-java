@@ -41,7 +41,7 @@ import com.sun.jna.ptr.PointerByReference;
 
 public class IoCTX extends RadosBase implements Closeable {
 
-    private static final int    EXT_ATTR_MAX_LEN = 4096;
+    private static final int EXT_ATTR_MAX_LEN = 4096;
 
     private Pointer ioCtxPtr;
 
@@ -70,15 +70,15 @@ public class IoCTX extends RadosBase implements Closeable {
 
     /**
      * Set the namespace for objects within an IO context.
-     * <p>
+     *
      * The namespace specification further refines a pool into different domains. The mapping of objects to PGs is also based on this value.
-     * 
+     *
      * @param namespace The name to use as the namespace, or NULL use the default namespace.
      */
     public void setNamespace(String namespace) {
         rados.rados_ioctx_set_namespace(getPointer(), namespace);
     }
-    
+
     /**
      * Get the pool ID of this context
      *
@@ -337,7 +337,7 @@ public class IoCTX extends RadosBase implements Closeable {
         handleReturnCode(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-            	return rados.rados_aio_write_full(getPointer(), oid, completion.getPointer(), buf, len);
+                return rados.rados_aio_write_full(getPointer(), oid, completion.getPointer(), buf, len);
             }
         }, "Failed to AIO write %s bytes to %s", len, oid);
     }
@@ -373,10 +373,10 @@ public class IoCTX extends RadosBase implements Closeable {
     public void aioWrite(String oid, final Completion completion, String buf) throws RadosException {
         this.aioWrite(oid, completion, buf.getBytes());
     }
-    
+
     /**
      * Block until all pending writes in an io context are safe.
-     * <p>
+     *
      * This is not equivalent to calling rados_aio_wait_for_safe() on all write completions, since this waits for the associated callbacks to complete as well.
      * @throws RadosException
      */
@@ -384,7 +384,7 @@ public class IoCTX extends RadosBase implements Closeable {
         handleReturnCode(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
-            	return rados.rados_aio_flush(getPointer());
+                return rados.rados_aio_flush(getPointer());
             }
         }, "Failed to AIO flush");
     }
@@ -471,9 +471,9 @@ public class IoCTX extends RadosBase implements Closeable {
     public void append(String oid, byte[] buf) throws RadosException {
         this.append(oid, buf, buf.length);
     }
-    
+
     /**
-     * 
+     *
      * @param oid
      *           The name to append to
      * @param buf
@@ -699,19 +699,19 @@ public class IoCTX extends RadosBase implements Closeable {
 
     /**
      * Get the value of an extended attribute on an object.
-     * 
+     *
      * @param oid
      *          The name of the object
      * @param xattrName
      *          The name of the extended attribute
      * @return
-     * 		The value of the extended attribute
+     *      The value of the extended attribute
      * @throws RadosException
-     * 		on failure -- common error codes:
-     * 		-34 (ERANGE)  :	value exceeds buffer
-     * 		-61 (ENODATA) :	no such attribute
+     *      on failure -- common error codes:
+     *      -34 (ERANGE)  : value exceeds buffer
+     *      -61 (ENODATA) : no such attribute
      */
-    public String getExtentedAttribute(final String oid, final String xattrName) throws RadosException {
+    public String getExtendedAttribute(final String oid, final String xattrName) throws RadosException {
         final byte[] buf = new byte[EXT_ATTR_MAX_LEN];
         handleReturnCode(new Callable<Integer>() {
             @Override
@@ -725,19 +725,19 @@ public class IoCTX extends RadosBase implements Closeable {
 
     /**
      * Set an extended attribute on an object.
-     * 
+     *
      * @param oid
      *          The name of the object
      * @param xattrName
      *          The name of the extended attribute
      * @param val
-     * 		The value of the extended attribute
+     *      The value of the extended attribute
      * @throws IllegalArgumentException
-     * 		attribute value is too long
+     *      attribute value is too long
      * @throws RadosException
-     * 		on failure
+     *      on failure
      */
-    public void setExtentedAttribute(final String oid, final String xattrName, String val) throws IllegalArgumentException, RadosException {
+    public void setExtendedAttribute(final String oid, final String xattrName, String val) throws IllegalArgumentException, RadosException {
         final byte[] buf = Native.toByteArray(val);
         if (buf.length > EXT_ATTR_MAX_LEN) {
             throw new IllegalArgumentException( "Length of attribute value must not exceed " + EXT_ATTR_MAX_LEN);
@@ -753,15 +753,15 @@ public class IoCTX extends RadosBase implements Closeable {
 
     /**
      * Delete an extended attribute from an object.
-     * 
+     *
      * @param oid
      *          The name of the object
      * @param xattrName
      *          The name of the extended attribute
      * @throws RadosException
-     * 		on failure
+     *      on failure
      */
-    public void removeExtentedAttribute(final String oid, final String xattrName) throws RadosException {
+    public void removeExtendedAttribute(final String oid, final String xattrName) throws RadosException {
         handleReturnCode(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
@@ -772,15 +772,15 @@ public class IoCTX extends RadosBase implements Closeable {
 
    /**
      * Get all extended attributes on an object.
-     * 
+     *
      * @param oid
      *          The name of the object
      * @return
-     * 		The map of the extended attributes
+     *      The map of the extended attributes
      * @throws RadosException
-     * 		on failure
+     *      on failure
      */
-    public Map<String, String> getExtentedAttributes(final String oid) throws RadosException {
+    public Map<String, String> getExtendedAttributes(final String oid) throws RadosException {
         Map<String, String> attr_map = new HashMap<>();
         final Pointer iterator = new Memory(Pointer.SIZE);
         final PointerByReference attr_name = new PointerByReference();

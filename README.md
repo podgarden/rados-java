@@ -1,4 +1,6 @@
 # RADOS Java
+
+[![Build Status](https://travis-ci.org/arnobroekhof/rados-java.svg?branch=master)](https://travis-ci.org/arnobroekhof/rados-java)
 These are Java bindings for [librados](http://www.ceph.com/docs/master/rados/api/librados/) (C) which use JNA.
 
 Both RADOS and RBD are implemented in these bindings.

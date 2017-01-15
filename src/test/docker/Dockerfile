@@ -13,7 +13,7 @@ ADD entrypoint.sh /entrypoint.sh
 
 # Add OpenJDK 8
 RUN apt-get update && \
-    apt-get -y --no-install-recommends install openjdk-8-jdk
+    apt-get -y --no-install-recommends install openjdk-8-jdk libjna-java
 
 # Add volumes for Ceph config and data
 VOLUME ["/etc/ceph","/var/lib/ceph"]

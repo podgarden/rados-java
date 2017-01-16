@@ -309,10 +309,10 @@ public class IoCTXStriper extends RadosBase {
      * @param xattrName The name of the extended attribute
      * @return The value of the extended attribute
      * @throws RadosException on failure -- common error codes:
-     *                        -34 (ERANGE)  :	value exceeds buffer
-     *                        -61 (ENODATA) :	no such attribute
+     *                        -34 (ERANGE)  :   value exceeds buffer
+     *                        -61 (ENODATA) :   no such attribute
      */
-    public String getExtentedAttribute(final String oid, final String xattrName) throws RadosException {
+    public String getExtendedAttribute(final String oid, final String xattrName) throws RadosException {
         final byte[] buf = new byte[EXT_ATTR_MAX_LEN];
         handleReturnCode(new Callable<Integer>() {
             @Override
@@ -333,7 +333,7 @@ public class IoCTXStriper extends RadosBase {
      * @throws IllegalArgumentException attribute value is too long
      * @throws RadosException           on failure
      */
-    public void setExtentedAttribute(final String oid, final String xattrName, String val) throws IllegalArgumentException, RadosException {
+    public void setExtendedAttribute(final String oid, final String xattrName, String val) throws IllegalArgumentException, RadosException {
         final byte[] buf = Native.toByteArray(val);
         if (buf.length > EXT_ATTR_MAX_LEN) {
             throw new IllegalArgumentException("Length of attribute value must not exceed " + EXT_ATTR_MAX_LEN);
@@ -354,7 +354,7 @@ public class IoCTXStriper extends RadosBase {
      * @param xattrName The name of the extended attribute
      * @throws RadosException on failure
      */
-    public void removeExtentedAttribute(final String oid, final String xattrName) throws RadosException {
+    public void removeExtendedAttribute(final String oid, final String xattrName) throws RadosException {
         handleReturnCode(new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {

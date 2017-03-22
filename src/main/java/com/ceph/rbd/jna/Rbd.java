@@ -23,7 +23,6 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.LongByReference;
-import com.sun.jna.ptr.PointerByReference;
 
 public interface Rbd extends Library {
 
@@ -50,6 +49,7 @@ public interface Rbd extends Library {
     int rbd_snap_remove(Pointer image, String snapname);
     int rbd_snap_protect(Pointer image, String snapname);
     int rbd_snap_unprotect(Pointer image, String snapname);
+    int rbd_snap_rollback(Pointer image, String snapname);
     int rbd_snap_is_protected(Pointer image, String snap_name, IntByReference is_protected);
     int rbd_snap_list(Pointer image, RbdSnapInfo[] snaps, IntByReference max_snaps);
     void rbd_snap_list_end(RbdSnapInfo[] snaps);

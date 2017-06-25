@@ -6,7 +6,7 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent test install'
+                sh 'mvn -DskipTests clean org.jacoco:jacoco-maven-plugin:prepare-agent test install'
             }
         }
     }
